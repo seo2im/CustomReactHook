@@ -62,7 +62,7 @@ function HookComp() {
 This batch process guarantees order.
 </br></br>
 
-## Control side effect
+## Control side effect ([effect]())
 
 **Side effect** changes state outside function. For example, calling Api or setting eventlistner. like below.
 
@@ -70,7 +70,7 @@ This batch process guarantees order.
 import React, { useEffect, useState } from 'react';
 import axios from 'axios' //This for async http requeseting
 
-function Effect({url}) {
+function Component({url}) {
 	const [ state, setState ] = useState(null);
 
 	useEffect(() => {
@@ -85,5 +85,71 @@ function Effect({url}) {
 }
 ```
 
-`UseEffect()` first parameter is callback, second parameter is **dependency array**. only exec callback when dependency array is changed. if no set dependency array, exec callback everytime with re-rendering. So when prop `url` is changed, get response correctly, change state, re-render page.
+`UseEffect()` first parameter is callback, second parameter is **dependency array**. only exec callback when dependency array is changed. if no set dependency array, exec callback everytime with re-rendering. So when prop `url` is changed, get response correctly, change state, re-render page.</br></br>Callback return function. Return function is exec before calling callback & delete component. Use it for event listner remove, like below.
+
+```javascript
+useEffect(() => {
+	const eventFunc = () => "event"
+
+	window.addEventListner("event", eventFunc))
+	return () => {
+		window.removeEventListner("event", eventFunc);
+	}
+}, []) 
+/*
+When defendency array is [],
+callback only work time to component made,
+return function only work time to component deleted.
+*/
+```
+</br></br>
+
+
+## Custom Hook
+
+Hook name start with 'use' for readability. Let's convert above code to custom hook. Look below.
+
+```javascript
+function useCustomHook(url) {
+	const [ state, setState ] = useState(null);
+	useEffect(() => {
+		axios.get(url).then(data => setState(data));
+	}, [url]);
+	return state;
+}
+
+function Component({url}) {
+	const state = useCustomHook(url);
+	/* ... */
+}
+```
+</br></br>
+
+## Rule of hook
+
+### Rule 1. Must call hook in custom hook or functional component.
+
+Hook is only for functional component, so it's of course. no work in other component or function.
+
+### Rule 2. Order of calling hook is always same.
+
+**React hook check state only with order.** So we must consist their order. Never use **'if'**, **'for(loop)'**, **function**. It make mess order of hook, like below.
+
+```javascript
+function Comp() {
+	if (/* some cond */) {
+		const [ s1, setS1 ] = useState(null);
+	}
+
+	for (let i = 0; i < s1; i++) {
+		const [ s2, setS2 ] = useState(null);
+	}
+
+	function mess() {
+		const [ s3, setS3 ] = useState(null);
+	}
+}
+```
+
+Above code is example of messing order of hook. React hook doesn't know when, where, how call hook.
 
